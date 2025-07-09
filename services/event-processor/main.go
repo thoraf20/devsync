@@ -35,7 +35,6 @@ func handleGetEvents(w http.ResponseWriter, r *http.Request) {
 	repo := r.URL.Query().Get("repo")
 	pusher := r.URL.Query().Get("pusher")
 
-	// Handle pagination defaults
 	limit := 50
 	offset := 0
 
@@ -44,34 +43,42 @@ func handleGetEvents(w http.ResponseWriter, r *http.Request) {
 			limit = parsedLimit
 		}
 	}
-
 	if o := r.URL.Query().Get("offset"); o != "" {
 		if parsedOffset, err := strconv.Atoi(o); err == nil && parsedOffset >= 0 {
 			offset = parsedOffset
 		}
 	}
 
-	query := `
-		SELECT id, repo_name, pusher_name, received_at
-		FROM github_events
-		WHERE 1=1
-	`
+	baseQuery := "FROM github_events WHERE 1=1"
 	args := []interface{}{}
 	argIndex := 1
 
 	if repo != "" {
-		query += fmt.Sprintf(" AND repo_name = $%d", argIndex)
+		baseQuery += fmt.Sprintf(" AND repo_name = $%d", argIndex)
 		args = append(args, repo)
 		argIndex++
 	}
-
 	if pusher != "" {
-		query += fmt.Sprintf(" AND pusher_name = $%d", argIndex)
+		baseQuery += fmt.Sprintf(" AND pusher_name = $%d", argIndex)
 		args = append(args, pusher)
 		argIndex++
 	}
 
-	query += fmt.Sprintf(" ORDER BY received_at DESC LIMIT $%d OFFSET $%d", argIndex, argIndex+1)
+	countQuery := "SELECT COUNT(*) " + baseQuery
+	var total int
+	if err := dbpool.QueryRow(context.Background(), countQuery, args...).Scan(&total); err != nil {
+		http.Error(w, "Failed to count events", http.StatusInternalServerError)
+		log.Println("Count error:", err)
+		return
+	}
+
+	query := fmt.Sprintf(`
+		SELECT id, repo_name, pusher_name, received_at
+		%s
+		ORDER BY received_at DESC
+		LIMIT $%d OFFSET $%d
+	`, baseQuery, argIndex, argIndex+1)
+
 	args = append(args, limit, offset)
 
 	rows, err := dbpool.Query(context.Background(), query, args...)
@@ -93,7 +100,10 @@ func handleGetEvents(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(events)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"total": total,
+		"items": events,
+	})
 }
 
 
