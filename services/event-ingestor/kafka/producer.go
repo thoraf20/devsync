@@ -18,10 +18,10 @@ func InitProducer() {
 	}
 
 	writer = kafka.NewWriter(kafka.WriterConfig{
-			Brokers:      []string{kafkaBroker},
-			Topic:        "devsync.events.raw",
-			Balancer:     &kafka.LeastBytes{},
-			WriteTimeout: 10 * time.Second,
+		Brokers:      []string{kafkaBroker},
+		Topic:        "devsync.events.raw",
+		Balancer:     &kafka.LeastBytes{},
+		WriteTimeout: 10 * time.Second,
 	})
 
 	log.Println("✅ Kafka producer initialized")
