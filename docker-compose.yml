@@ -38,3 +38,15 @@ services:
       POSTGRES_PASSWORD: devsyncpass
     ports:
       - "5432:5432"
+
+  event-processor:
+    build:
+      context: ./services/event-processor
+      dockerfile: Dockerfile
+    depends_on:
+      - kafka
+      - postgres
+    environment:
+      DB_URL: postgres://devsync:devsyncpass@postgres:5432/devsyncdb?sslmode=disable
+    ports:
+      - "8081:8081"

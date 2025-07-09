@@ -5,9 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"time"
 	"net/http"
+	"os"
 	"strconv"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/segmentio/kafka-go"
@@ -108,11 +109,17 @@ func handleGetEvents(w http.ResponseWriter, r *http.Request) {
 
 
 	func main() {
-	dbURL := "postgres://devsync:devsyncpass@localhost:5432/devsyncdb?sslmode=disable"
+	// dbURL := "postgres://devsync:devsyncpass@localhost:5432/devsyncdb?sslmode=disable"
+	dbURL := os.Getenv("DB_URL")
+	if dbURL == "" {
+		log.Fatal("❌ DB_URL is not set")
+	}
+
 	dbpool, err := pgxpool.New(context.Background(), dbURL)
 	if err != nil {
 		log.Fatalf("❌ Failed to connect to Postgres: %v", err)
 	}
+	
 	defer dbpool.Close()
 	fmt.Println("✅ Connected to Postgres")
 
