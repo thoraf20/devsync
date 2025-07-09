@@ -29,7 +29,7 @@ func InitProducer() {
 
 func PublishMessage(value []byte) error {
 	msg := kafka.Message{
-			Value: value,
+		Value: value,
 	}
 
 	return writer.WriteMessages(context.Background(), msg)
