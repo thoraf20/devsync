@@ -15,12 +15,12 @@ import (
 func main() {
 	err := godotenv.Load()
 	if err != nil {
-			log.Println("No .env file found, using default env values")
+		log.Println("No .env file found, using default env values")
 	}
 
 	port := os.Getenv("PORT")
 	if port == "" {
-			port = "8080"
+		port = "8080"
 	}
 	// Initialize Kafka producer
 	kafka.InitProducer()
