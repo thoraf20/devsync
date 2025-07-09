@@ -9,6 +9,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/gorilla/mux"
 	"devsync/internal/handlers"
+	"devsync/kafka"
 )
 
 func main() {
@@ -21,6 +22,8 @@ func main() {
 	if port == "" {
 			port = "8080"
 	}
+	// Initialize Kafka producer
+	kafka.InitProducer()
 
 	r := mux.NewRouter()
 	r.HandleFunc("/webhook", handlers.WebhookHandler).Methods("POST")

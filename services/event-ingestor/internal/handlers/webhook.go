@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"devsync/kafka"
 )
 
 type GitHubEvent struct {
@@ -22,8 +23,20 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
 			return
 	}
 
-	// Later: Push this event to Kafka
-	fmt.Printf("📥 Received event from repo: %s, by user: %s\n", event.Repository.FullName, event.Pusher.Name)
+	payload, err := json.Marshal(event)
+	if err != nil {
+		http.Error(w, "Failed to encode event", http.StatusInternalServerError)
+		return
+	}
+
+	// Publish to Kafka
+	if err := kafka.PublishMessage(payload); err != nil {
+		http.Error(w, "Failed to send to Kafka", http.StatusInternalServerError)
+		fmt.Printf("❌ Failed to send event to Kafka: %v\n", err)
+		return
+	}
+
+	fmt.Printf("📤 Sent event to Kafka: %s by %s\n", event.Repository.FullName, event.Pusher.Name)
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Event received"))
